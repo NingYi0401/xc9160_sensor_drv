@@ -12,6 +12,6 @@
 #
 
 
-obj-y += imx298mipiyuv_Sensor.o
+obj-y += xc9160yuv_Sensor.o
 
 
