@@ -6,24 +6,64 @@
 #include <linux/cdev.h>
 #include <linux/uaccess.h>
 #include <linux/fs.h>
+#include <linux/kthread.h>
+#include <linux/uaccess.h>
+#include <linux/types.h>
+#include <linux/module.h>
+#include <linux/compat.h>
+#include <linux/slab.h>
+#include <linux/mutex.h>
+#include <linux/semaphore.h>
 #include <asm/atomic.h>
 #include <asm/io.h>
+#include <asm/unistd.h>
 //#include <asm/system.h>  
 #include "kd_camera_hw.h"
 #include "kd_imgsensor.h"
 #include "kd_imgsensor_define.h"
 #include "kd_imgsensor_errcode.h"
 #include "kd_camera_feature.h"
-#include "xc9160yuv_Sensor.h"
+//#include "xc9160yuv_Sensor.h"
 #include "xc9160yuv_Camera_Sensor_para.h"
 #include "xc9160yuv_CameraCustomized.h" 
 #include "xc9160yuv_sensor_config.h"
 
 unsigned int dual_mode_symbol;
 #define CAMERA_MODE_DUAL 1
+//3D_Calibration buffer size
+#define DATA_SIZE 2048
+
+static struct semaphore thread_sem;
+static int sensor_power_on;
+static int xchip_thread_loop(void *arg);
 
 static MSDK_SCENARIO_ID_ENUM CurrentScenarioId = MSDK_SCENARIO_ID_CAMERA_PREVIEW;
 MSDK_SENSOR_CONFIG_STRUCT IMX298MIPISensorConfigData;
+
+extern void xchip_3d_cal_init(void* p_data, int len);
+
+static kal_uint32 XC9160_Dual_Camera_Calibration(void)
+{
+	struct task_struct *xc9160_thread;
+	 
+	xc9160_thread = kthread_run(xchip_thread_loop, NULL, "xc9160_3d_cal");
+	if (IS_ERR(xc9160_thread)) {
+		pr_err("[XC9160]failed to create xchip 3d cal thread \n");
+		return -EFAULT;
+	}
+	printk("[XC9160]sensor Dual_Camera_Calibration end :\n ");
+	return 0;
+}
+static kal_uint16 OTP_read_cmos_sensor(kal_uint32 addr)
+{
+	kal_uint16 get_byte = 0;
+
+	char pu_send_cmd[2] = { (char)(addr >> 8), (char)(addr & 0xFF) };
+
+	iReadRegI2C(pu_send_cmd, 2, (u8 *) &get_byte, 1, OTP_WRITE_ID);
+
+	return get_byte;
+}
 
 int read_sensor_mode(MUINT8* dual_mode)
 {
@@ -31,17 +71,13 @@ int read_sensor_mode(MUINT8* dual_mode)
 	dual_mode_symbol = *dual_mode;
 
 	if(dual_mode_symbol == CAMERA_MODE_DUAL){
-		xc9160_capture_width  = 6000;
-		xc9160_capture_height = 3120;
+		xc9160_capture_width  = 2080;
+		xc9160_capture_height = 1536;
 		xc9160_preview_width  = 2080;
 		xc9160_preview_height = 1536;
         CurrentMode = &DualModeFunction;
 		}
 	else{
-		xc9160_capture_width  = 4160;
-		xc9160_capture_height = 3120;
-		xc9160_preview_width  = 2080;
-		xc9160_preview_height = 1536;
         CurrentMode = &SingleModeFunction; 
 	}
     return 0;
@@ -77,10 +113,10 @@ UINT32 UnusedOpen(void)
 	return ERROR_NONE;
 }
 
-UINT32 Open(void)
+static UINT32 Open(void)
 {
     kal_uint32 isp_id[4]={0};  
-		
+	int sys_ret;		
 	XC9160DB("xchip open start\n ");
 
     XC9160_write_cmos_sensor(0xfffd,0x80);
@@ -116,12 +152,18 @@ UINT32 Open(void)
         XC9160_write_cmos_sensor(0xfffe,0x50);
         XC9160_write_cmos_sensor(0x004d ,0x00); 
      
-        XC9160DB("[xchip]exit IMX298MIPIOpen\n ");
-    
+        XC9160DB("[xchip]exit IMX298MIPIOpen\n ");		
+		
+		sys_ret = down_interruptible(&thread_sem);
+		if (0 == sys_ret) {
+			sensor_power_on	= 1;
+			up(&thread_sem);
+		}		
+
         return ERROR_NONE;
 }  
 
-UINT32 Preview(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_window,
+static UINT32 Preview(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_window,
                       MSDK_SENSOR_CONFIG_STRUCT *sensor_config_data)
 {
     XC9160DB("[xchip]enter Preview function:\n ");
@@ -145,12 +187,14 @@ UINT32 Preview(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_window,
         CurrentMode->xc9160preview();//Dual_XC9160PreviewSetting();
     
         XC9160_write_cmos_sensor(0xfffe,0x50);
-   
+		
+		XC9160_Dual_Camera_Calibration(); 
+ 		
         XC9160DB("[xchip]exit Preview function:\n ");
         return ERROR_NONE ;
 }
 
-UINT32 Capture(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_window,MSDK_SENSOR_CONFIG_STRUCT *sensor_config_data)
+static UINT32 Capture(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_window,MSDK_SENSOR_CONFIG_STRUCT *sensor_config_data)
 {
     XC9160DB("[xchip]Capture\n ");
 
@@ -184,13 +228,22 @@ UINT32 Capture(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_window,MSDK_SENSOR_CONF
         return ERROR_NONE;
 }
 
-UINT32 Close(void)
+static UINT32 Close(void)
 {
-    XC9160DB("[xchip] Close\n ");
+	int sys_ret;
+
+	sys_ret = down_interruptible(&thread_sem);
+	if (0 == sys_ret) {
+		sensor_power_on	= 0;
+		up(&thread_sem);
+	}
+
+	XC9160DB("[xchip] Close\n ");
+ 
     return ERROR_NONE;
 } 
 
-UINT32 GetResolution(MSDK_SENSOR_RESOLUTION_INFO_STRUCT *pSensorResolution)
+static UINT32 GetResolution(MSDK_SENSOR_RESOLUTION_INFO_STRUCT *pSensorResolution)
 {
     pSensorResolution->SensorPreviewWidth= (xc9160_preview_width - 48);   //xc9160_capture_width-2*IMX298MIPI_PV_GRAB_START_X;
     pSensorResolution->SensorPreviewHeight= (xc9160_preview_height - 36);   //xc9160_capture_height-2*IMX298MIPI_PV_GRAB_START_Y;
@@ -202,7 +255,7 @@ UINT32 GetResolution(MSDK_SENSOR_RESOLUTION_INFO_STRUCT *pSensorResolution)
     return ERROR_NONE;
 }
 
-UINT32 GetInfo(MSDK_SCENARIO_ID_ENUM ScenarioId,MSDK_SENSOR_INFO_STRUCT *pSensorInfo,MSDK_SENSOR_CONFIG_STRUCT *pSensorConfigData)
+static UINT32 GetInfo(MSDK_SCENARIO_ID_ENUM ScenarioId,MSDK_SENSOR_INFO_STRUCT *pSensorInfo,MSDK_SENSOR_CONFIG_STRUCT *pSensorConfigData)
 {
     XC9160DB("[xchip]GetInfo-619: ScenarioId=%d %d, %d\n ", ScenarioId, xc9160_capture_width,xc9160_capture_height);
    
@@ -318,7 +371,7 @@ UINT32 GetInfo(MSDK_SCENARIO_ID_ENUM ScenarioId,MSDK_SENSOR_INFO_STRUCT *pSensor
     return ERROR_NONE;
 } 
 
-UINT32 Control(MSDK_SCENARIO_ID_ENUM ScenarioId, MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *pImageWindow,MSDK_SENSOR_CONFIG_STRUCT *pSensorConfigData)
+static UINT32 Control(MSDK_SCENARIO_ID_ENUM ScenarioId, MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *pImageWindow,MSDK_SENSOR_CONFIG_STRUCT *pSensorConfigData)
 {
       XC9160DB("[xchip]enter Control function:\n ");
      // spin_lock(&IMX298mipi_drv_lock);
@@ -342,7 +395,7 @@ UINT32 Control(MSDK_SCENARIO_ID_ENUM ScenarioId, MSDK_SENSOR_EXPOSURE_WINDOW_STR
     return ERROR_NONE;
 } 
 
-UINT32 XC9160YUVSensorSetting(FEATURE_ID iCmd, UINT32 iPara)
+static UINT32 XC9160YUVSensorSetting(FEATURE_ID iCmd, UINT32 iPara)
 {
 
     XC9160DB("[xchip]enter XC9160YUVSensorSetting function:\n ");
@@ -358,16 +411,6 @@ UINT32 XC9160YUVSensorSetting(FEATURE_ID iCmd, UINT32 iPara)
         case FID_AE_FLICKER:                    
               break;
         case FID_AE_SCENE_MODE: 
-                if (iPara == AE_MODE_OFF) 
-                {
-                    spin_lock(&IMX298mipi_drv_lock);
-                    spin_unlock(&IMX298mipi_drv_lock);
-        }
-        else 
-        {
-                    spin_lock(&IMX298mipi_drv_lock);
-                    spin_unlock(&IMX298mipi_drv_lock);
-            }
         break; 
         case FID_ISP_CONTRAST:
             break;
@@ -376,9 +419,6 @@ UINT32 XC9160YUVSensorSetting(FEATURE_ID iCmd, UINT32 iPara)
         case FID_ISP_SAT:
         break; 
     case FID_ZOOM_FACTOR:
-            XC9160DB("FID_ZOOM_FACTOR:%d\n", iPara);      
-                    spin_lock(&IMX298mipi_drv_lock);
-                    spin_unlock(&IMX298mipi_drv_lock);
             break; 
         case FID_AE_ISO:
             break;        
@@ -390,7 +430,7 @@ UINT32 XC9160YUVSensorSetting(FEATURE_ID iCmd, UINT32 iPara)
       return TRUE;
 }
 
-UINT32 XC9160GetDefaultFramerateByScenario(
+static UINT32 XC9160GetDefaultFramerateByScenario(
   MSDK_SCENARIO_ID_ENUM scenarioId, MUINT32 *pframeRate)
 {
     switch (scenarioId)
@@ -417,10 +457,10 @@ UINT32 XC9160GetDefaultFramerateByScenario(
 }
 
 
-UINT32 FeatureControl(MSDK_SENSOR_FEATURE_ENUM FeatureId,UINT8 *pFeaturePara,UINT32 *pFeatureParaLen)
+static UINT32 FeatureControl(MSDK_SENSOR_FEATURE_ENUM FeatureId,UINT8 *pFeaturePara,UINT32 *pFeatureParaLen)
 {
     UINT16 *pFeatureReturnPara16=(UINT16 *) pFeaturePara;
-    UINT16 *pFeatureData16=(UINT16 *) pFeaturePara;
+    //UINT16 *pFeatureData16=(UINT16 *) pFeaturePara;
     UINT32 *pFeatureReturnPara32=(UINT32 *) pFeaturePara;
     UINT32 *pFeatureData32=(UINT32 *) pFeaturePara;
 	unsigned long long *feature_data=(unsigned long long *) pFeaturePara;
@@ -440,33 +480,22 @@ UINT32 FeatureControl(MSDK_SENSOR_FEATURE_ENUM FeatureId,UINT8 *pFeaturePara,UIN
             break;
 		case SENSOR_FEATURE_SET_DUAL_MODE:
 			read_sensor_mode(pFeaturePara);
-			open();
+			Open();
 			break;	
         case SENSOR_FEATURE_GET_PERIOD:
-
-
 			*pFeatureReturnPara16++=xc9160_preview_width;
 			*pFeatureReturnPara16=xc9160_preview_height;
-			*pFeatureParaLen=4;
-
-						
-		
+			*pFeatureParaLen=4;								
             break;
-
         case SENSOR_FEATURE_GET_PIXEL_CLOCK_FREQ:
-
 			*pFeatureReturnPara32 = 48000000;	 //unit: Hz
-			*pFeatureParaLen=4;
-	
+			*pFeatureParaLen=4;	
             break;
-
         case SENSOR_FEATURE_SET_ESHUTTER:
             break;
         case SENSOR_FEATURE_GET_EXIF_INFO:
-            IMX298MIPIGetExifInfo(*feature_data);
             break;
         case SENSOR_FEATURE_SET_NIGHTMODE:
-            //IMX298MIPI_night_mode((BOOL) *pFeatureData16);
             break;
         case SENSOR_FEATURE_SET_GAIN:
             break;
@@ -474,36 +503,29 @@ UINT32 FeatureControl(MSDK_SENSOR_FEATURE_ENUM FeatureId,UINT8 *pFeaturePara,UIN
             break;
         case SENSOR_FEATURE_SET_ISP_MASTER_CLOCK_FREQ:
             break;
-        case SENSOR_FEATURE_SET_REGISTER:
-			
-			//mutex_lock(&TV_switch_lock);
-			
+        case SENSOR_FEATURE_SET_REGISTER:			
             if(pSensorRegData->RegAddr & 0x10000)            
             {            	
 				XC9160DB("SENSOR_FEATURE_SET_REGISTER(XC91601): addr:%x  value:%x\n",pSensorRegData->RegAddr,pSensorRegData->RegData);
-				XC9160_write_cmos_sensor(0xfffd ,0x80);
+				XC9160_write_cmos_sensor(0xfffd,0x80);
 				XC9160_write_cmos_sensor(0xfffe,0x50);
-				XC9160_write_cmos_sensor(0x004d ,0x01);
+				XC9160_write_cmos_sensor(0x004d,0x01);
 				mainsensor_write_cmos_sensor(pSensorRegData->RegAddr&0xffff, pSensorRegData->RegData);
-				XC9160_write_cmos_sensor(0x004d ,0x00);
+				XC9160_write_cmos_sensor(0x004d,0x00);
             }
 			else
 			{
 				XC9160DB("SENSOR_FEATURE_SET_REGISTER(XC9160): addr:%x  value:%x\n",pSensorRegData->RegAddr,pSensorRegData->RegData);
 				XC9160_write_cmos_sensor(pSensorRegData->RegAddr&0xffff, pSensorRegData->RegData);
-			}
-			//mutex_unlock(&TV_switch_lock);
-			
+			}			
             break;
-        case SENSOR_FEATURE_GET_REGISTER:
-
-			//mutex_lock(&TV_switch_lock);										
+        case SENSOR_FEATURE_GET_REGISTER:									
             if(pSensorRegData->RegAddr & 0x10000)            
             {
 				XC9160_write_cmos_sensor(0xfffd ,0x80);
 				XC9160_write_cmos_sensor(0xfffe,0x50);
 				XC9160_write_cmos_sensor(0x004d ,0x01);
-				pSensorRegData->RegData = IMX298MIPIYUV_read_cmos_sensor(pSensorRegData->RegAddr&0xffff);				
+				pSensorRegData->RegData = mainsensor_read_cmos_sensor(pSensorRegData->RegAddr&0xffff);				
 				XC9160_write_cmos_sensor(0x004d ,0x00);				
 				XC9160DB("SENSOR_FEATURE_GET_REGISTER(XC91601): addr:0x%x  value:0x%x\n",pSensorRegData->RegAddr,pSensorRegData->RegData);
             }
@@ -512,8 +534,6 @@ UINT32 FeatureControl(MSDK_SENSOR_FEATURE_ENUM FeatureId,UINT8 *pFeaturePara,UIN
 				pSensorRegData->RegData = XC9160_read_cmos_sensor(pSensorRegData->RegAddr&0xffff);
 				XC9160DB("SENSOR_FEATURE_GET_REGISTER(XC9160): addr:0x%x  value:0x%x\n",pSensorRegData->RegAddr,pSensorRegData->RegData);
     		}
-			//mutex_unlock(&TV_switch_lock);	
-			
             break;
         case SENSOR_FEATURE_GET_CONFIG_PARA:
             memcpy(pSensorConfigData, &IMX298MIPISensorConfigData, sizeof(MSDK_SENSOR_CONFIG_STRUCT));
@@ -539,8 +559,7 @@ UINT32 FeatureControl(MSDK_SENSOR_FEATURE_ENUM FeatureId,UINT8 *pFeaturePara,UIN
             *pFeatureReturnPara32=LENS_DRIVER_ID_DO_NOT_CARE;
             *pFeatureParaLen=4;
             break;
-        case SENSOR_FEATURE_SET_TEST_PATTERN:            
-            //IMX298SetTestPatternMode((BOOL)*pFeatureData16);            
+        case SENSOR_FEATURE_SET_TEST_PATTERN:                      
             break;
         case SENSOR_FEATURE_CHECK_SENSOR_ID:
             XC9160_GetSensorID(pFeatureData32);
@@ -548,20 +567,18 @@ UINT32 FeatureControl(MSDK_SENSOR_FEATURE_ENUM FeatureId,UINT8 *pFeaturePara,UIN
         case SENSOR_FEATURE_SET_YUV_CMD:
             XC9160YUVSensorSetting((FEATURE_ID)*feature_data, *(feature_data+1));
             break;
-
 		case SENSOR_FEATURE_GET_DEFAULT_FRAME_RATE_BY_SCENARIO:
 			XC9160GetDefaultFramerateByScenario((MSDK_SCENARIO_ID_ENUM)*feature_data, (MUINT32 *)(uintptr_t)(*(feature_data+1)));
 			break;
-
         default:
             XC9160DB("FeatureControl:default \n");
             break;          
     }
     XC9160DB("[xchip]exit FeatureControl function:\n ");
     return ERROR_NONE;
-}   /* IMX298MIPIFeatureControl() */
+}
 
-SENSOR_FUNCTION_STRUCT  SensorFuncIMX298MIPI=
+static SENSOR_FUNCTION_STRUCT  SensorFuncIMX298MIPI=
 {
     UnusedOpen,
     GetInfo,
@@ -573,9 +590,47 @@ SENSOR_FUNCTION_STRUCT  SensorFuncIMX298MIPI=
 
 UINT32 XC9160IMX298MIPISensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc)
 {
+	sema_init(&thread_sem, 1);
+
     if (pfFunc!=NULL)
         *pfFunc=&SensorFuncIMX298MIPI;
     return ERROR_NONE;
 }
+
+static int xchip_thread_loop(void *arg)
+{
+	kal_uint8 ret=0;
+	int sys_ret;
+	int i=0;
+	u8 *pdatabuff=NULL;
+	pdatabuff=(u8 *)kmalloc(DATA_SIZE, GFP_KERNEL);
+	if (NULL == pdatabuff) {
+		printk("[XC9160MIPI]: No mem \n");
+		return -1;
+	}
+	sys_ret = down_interruptible(&thread_sem);
+	if (0 == sys_ret) {
+		if (sensor_power_on) {
+			printk("sensor is on, to read 3d calibration data");
+			//TODO: read OTP from Sensor bypass ISP
+			XC9160_write_cmos_sensor(0xfffd,0x80);
+			XC9160_write_cmos_sensor(0xfffe,0x50);
+			XC9160_write_cmos_sensor(0x004d,0x01);
+			for (i = 0; i < DATA_SIZE; i++) {	   
+				ret=OTP_read_cmos_sensor(0x0000+i);
+				pdatabuff[i] = ret;
+			}
+			printk("sensor is on, to read 3d calibration data end");
+			XC9160_write_cmos_sensor(0x004d,0x00);
+			xchip_3d_cal_init(pdatabuff, DATA_SIZE);
+		}
+		up(&thread_sem);
+	}
+	kfree(pdatabuff);
+	return 0;
+}
+
+
+
 	
 

@@ -13,5 +13,5 @@
 
 
 obj-y += xc9160yuv_Sensor.o
-
+obj-y += xchip_3d_cal.o
 

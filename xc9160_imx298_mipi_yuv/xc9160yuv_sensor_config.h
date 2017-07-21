@@ -24,10 +24,10 @@
 #define XC9160DB(x,...)
 #endif
 
-MUINT16 xc9160_capture_width = 0;
-MUINT16 xc9160_capture_height = 0;
-MUINT16 xc9160_preview_width = 0;
-MUINT16 xc9160_preview_height = 0;
+MUINT16 xc9160_capture_width = 1920;
+MUINT16 xc9160_capture_height = 1080;
+MUINT16 xc9160_preview_width = 1920;
+MUINT16 xc9160_preview_height = 1080;
 
 extern int iReadReg(u16 a_u2Addr , u8 * a_puBuff , u16 i2cId);
 extern int iWriteReg(u16 a_u2Addr , u32 a_u4Data , u32 a_u4Bytes , u16 i2cId);
@@ -71,41 +71,135 @@ kal_uint16 subsensor_read_cmos_sensor(kal_uint32 addr)
  void XC9160InitialSetting(void)
  {
  	XC9160DB("[xchip]XC9160_ISP_InitialSetting start \n");
-	XC9160_write_cmos_sensor(0xfffd,0x80);
-	XC9160_write_cmos_sensor(0xfffe,0x50);
-	XC9160_write_cmos_sensor(0x001c,0xff);       
-	XC9160_write_cmos_sensor(0x001d,0xff);  
-	XC9160_write_cmos_sensor(0x001e,0xff);  
-	XC9160_write_cmos_sensor(0x001f,0xff);  
-	XC9160_write_cmos_sensor(0x0018,0x00);         
-	XC9160_write_cmos_sensor(0x0019,0x00);  
-	XC9160_write_cmos_sensor(0x001a,0x00);  
-	XC9160_write_cmos_sensor(0x001b,0x00);
-	XC9160_write_cmos_sensor(0x00bc,0x19);
-	
-	XC9160_write_cmos_sensor(0x0030,0x44);
-	XC9160_write_cmos_sensor(0x0031,0x58);
-	XC9160_write_cmos_sensor(0x0032,0x34);  
-	XC9160_write_cmos_sensor(0x0033,0x70);   
-	
-	XC9160_write_cmos_sensor(0x0020,0x02);
-	XC9160_write_cmos_sensor(0x0021,0x0d);
-	XC9160_write_cmos_sensor(0x0022,0x01);
-	XC9160_write_cmos_sensor(0x0023,0x86);
-	XC9160_write_cmos_sensor(0x0024,0x0e);
-	XC9160_write_cmos_sensor(0x0025,0x05); 
-	XC9160_write_cmos_sensor(0x0026,0x01);
-	XC9160_write_cmos_sensor(0x0027,0x06);
-	XC9160_write_cmos_sensor(0x0028,0x01);
-	XC9160_write_cmos_sensor(0x0029,0x00);
-	XC9160_write_cmos_sensor(0x002a,0x02);
-	XC9160_write_cmos_sensor(0x002b,0x05);
+ 	XC9160_write_cmos_sensor(0xfffd,0x80);
+XC9160_write_cmos_sensor(0xfffe,0x50);
+XC9160_write_cmos_sensor(0x001c,0xff);       
+XC9160_write_cmos_sensor(0x001d,0xff);  
+XC9160_write_cmos_sensor(0x001e,0xff);  
+XC9160_write_cmos_sensor(0x001f,0xff);  
+XC9160_write_cmos_sensor(0x0018,0x00);         
+XC9160_write_cmos_sensor(0x0019,0x00);  
+XC9160_write_cmos_sensor(0x001a,0x00);  
+XC9160_write_cmos_sensor(0x001b,0x00);
+XC9160_write_cmos_sensor(0x00bc,0x19);
+
+XC9160_write_cmos_sensor(0x0030,0x44);
+XC9160_write_cmos_sensor(0x0031,0x58);
+XC9160_write_cmos_sensor(0x0032,0x34);  
+XC9160_write_cmos_sensor(0x0033,0x70);   
+
+XC9160_write_cmos_sensor(0x0020,0x02);
+XC9160_write_cmos_sensor(0x0021,0x0d);
+XC9160_write_cmos_sensor(0x0022,0x01);
+XC9160_write_cmos_sensor(0x0023,0x86);
+XC9160_write_cmos_sensor(0x0024,0x0e);
+XC9160_write_cmos_sensor(0x0025,0x05); 
+XC9160_write_cmos_sensor(0x0026,0x01);
+XC9160_write_cmos_sensor(0x0027,0x06);
+XC9160_write_cmos_sensor(0x0028,0x01);
+XC9160_write_cmos_sensor(0x0029,0x00);
+XC9160_write_cmos_sensor(0x002a,0x02);
+XC9160_write_cmos_sensor(0x002b,0x05);
+
+XC9160_write_cmos_sensor(0x0090,0x3a);
+
+XC9160_write_cmos_sensor(0x0090,0x3a);
+
+XC9160_write_cmos_sensor(0xfffe,0x26);
+
+XC9160_write_cmos_sensor(0x8000,0x1d);
+XC9160_write_cmos_sensor(0x8001,0x80);
+XC9160_write_cmos_sensor(0x8002,0x07);
+XC9160_write_cmos_sensor(0x8003,0x38);
+XC9160_write_cmos_sensor(0x8004,0x04);
+
+XC9160_write_cmos_sensor(0x8010,0x04);
+XC9160_write_cmos_sensor(0x8012,0x80);
+XC9160_write_cmos_sensor(0x8013,0x07);
+XC9160_write_cmos_sensor(0x8014,0x38);
+XC9160_write_cmos_sensor(0x8015,0x04);
+XC9160_write_cmos_sensor(0x8016,0x00);
+XC9160_write_cmos_sensor(0x8017,0x00);
+XC9160_write_cmos_sensor(0x8018,0x00);
+XC9160_write_cmos_sensor(0x8019,0x00);
+
+XC9160_write_cmos_sensor(0xfffe,0x30);
+XC9160_write_cmos_sensor(0x1900,0x00);
+XC9160_write_cmos_sensor(0x1901,0x00);
+XC9160_write_cmos_sensor(0x1902,0x00);
+XC9160_write_cmos_sensor(0x1903,0x00);
+XC9160_write_cmos_sensor(0x1904,0x07);
+XC9160_write_cmos_sensor(0x1905,0x80);
+XC9160_write_cmos_sensor(0x1906,0x04);
+XC9160_write_cmos_sensor(0x1907,0x38);
+XC9160_write_cmos_sensor(0x1908,0x00);
+
+XC9160_write_cmos_sensor(0xfffe,0x2c);
+
+XC9160_write_cmos_sensor(0x0000,0x00);
+XC9160_write_cmos_sensor(0x0001,0x07);
+XC9160_write_cmos_sensor(0x0002,0x80);
+XC9160_write_cmos_sensor(0x0004,0x04);
+XC9160_write_cmos_sensor(0x0005,0x38);
+XC9160_write_cmos_sensor(0x0008,0x10);
+XC9160_write_cmos_sensor(0x0044,0x08);
+XC9160_write_cmos_sensor(0x0045,0x04);
+XC9160_write_cmos_sensor(0x0048,0x0E);
+XC9160_write_cmos_sensor(0x0049,0xF0);
+
+XC9160_write_cmos_sensor(0xfffe,0x26);
+
+XC9160_write_cmos_sensor(0x2019,0x07);
+XC9160_write_cmos_sensor(0x201a,0x80);
+XC9160_write_cmos_sensor(0x201b,0x04);
+XC9160_write_cmos_sensor(0x201c,0x38);
+XC9160_write_cmos_sensor(0x201d,0x00);
+XC9160_write_cmos_sensor(0x201e,0x00);
+XC9160_write_cmos_sensor(0x201f,0x00);
+XC9160_write_cmos_sensor(0x2020,0x00);
+
+XC9160_write_cmos_sensor(0x2015,0x83);
+XC9160_write_cmos_sensor(0x2017,0x1E);
+XC9160_write_cmos_sensor(0x2018,0x00);
+XC9160_write_cmos_sensor(0x2023,0x03);
+
+XC9160_write_cmos_sensor(0x0000,0x60);
+XC9160_write_cmos_sensor(0x0009,0xc4);
+
+XC9160_write_cmos_sensor(0xfffe,0x30);
+
+XC9160_write_cmos_sensor(0x0000,0x01);
+XC9160_write_cmos_sensor(0x0001,0x00);
+XC9160_write_cmos_sensor(0x0002,0x10);
+XC9160_write_cmos_sensor(0x0003,0x20);
+XC9160_write_cmos_sensor(0x0004,0x10);
+XC9160_write_cmos_sensor(0x0050,0x20);
+XC9160_write_cmos_sensor(0x0019,0x08);
+XC9160_write_cmos_sensor(0x005e,0x7F);
+XC9160_write_cmos_sensor(0x005f,0x07);
+XC9160_write_cmos_sensor(0x0060,0x37);
+XC9160_write_cmos_sensor(0x0061,0x04);
+XC9160_write_cmos_sensor(0x0064,0x80);
+XC9160_write_cmos_sensor(0x0065,0x07);
+XC9160_write_cmos_sensor(0x0066,0x38);
+XC9160_write_cmos_sensor(0x0067,0x04);
+
+XC9160_write_cmos_sensor(0x0006,0x07);
+XC9160_write_cmos_sensor(0x0007,0x80);
+XC9160_write_cmos_sensor(0x0008,0x04);
+XC9160_write_cmos_sensor(0x0009,0x38);
+XC9160_write_cmos_sensor(0x000a,0x07);
+XC9160_write_cmos_sensor(0x000b,0x80);
+XC9160_write_cmos_sensor(0x000c,0x04);
+XC9160_write_cmos_sensor(0x000d,0x38);
+
 	XC9160DB("[xchip]XC9160_ISP_InitialSetting end\n");
  }
 
 void MainSensorInitialSetting(void)
  {
  	XC9160DB("[xchip]MainSensorMIPIInitialSetting start \n");
+
 
  	XC9160DB("[xchip]MainSensorMIPIInitialSetting end \n");
  }
@@ -122,145 +216,7 @@ void SubSensorInitialSetting(void)
 void XC9160PreviewSetting(void)
 {
 	XC9160DB("[xchip]XC9160PreviewSetting start \n");
-	XC9160_write_cmos_sensor(0xfffe,0x50);	
-	XC9160_write_cmos_sensor(0x0030,0x44);
-	XC9160_write_cmos_sensor(0x0031,0x58);
-	XC9160_write_cmos_sensor(0x0032,0x34);  
-	XC9160_write_cmos_sensor(0x0033,0x70);   
 	
-	XC9160_write_cmos_sensor(0x0020,0x02);
-	XC9160_write_cmos_sensor(0x0021,0x0d);
-	XC9160_write_cmos_sensor(0x0022,0x01);
-	XC9160_write_cmos_sensor(0x0023,0x86);
-	XC9160_write_cmos_sensor(0x0024,0x0e);
-	XC9160_write_cmos_sensor(0x0025,0x05); 
-	XC9160_write_cmos_sensor(0x0026,0x01);
-	XC9160_write_cmos_sensor(0x0027,0x06);
-	XC9160_write_cmos_sensor(0x0028,0x01);
-	XC9160_write_cmos_sensor(0x0029,0x00);
-	XC9160_write_cmos_sensor(0x002a,0x02);
-	XC9160_write_cmos_sensor(0x002b,0x05);	
-	
-	XC9160_write_cmos_sensor(0xfffe,0x14);
-	XC9160_write_cmos_sensor(0x002b,0x01); 
-	XC9160_write_cmos_sensor(0x002c,0x01);  
-	XC9160_write_cmos_sensor(0x002d,0x01);  
-			
-	XC9160_write_cmos_sensor(0xfffe,0x50);
-	XC9160_write_cmos_sensor(0x00bc,0x19);
-	XC9160_write_cmos_sensor(0x0090,0x3a);
-	
-	XC9160_write_cmos_sensor(0x0200,0x0f);   //mipi_rx1_pad_en
-	XC9160_write_cmos_sensor(0x0201,0x00);
-	XC9160_write_cmos_sensor(0x0202,0x80);
-	XC9160_write_cmos_sensor(0x0203,0x00);
-	
-	XC9160_write_cmos_sensor(0xfffe,0x26);
-	
-	XC9160_write_cmos_sensor(0x8001,0x20);      //colorbar0
-	XC9160_write_cmos_sensor(0x8002,0x08);
-	XC9160_write_cmos_sensor(0x8003,0x00);
-	XC9160_write_cmos_sensor(0x8004,0x06);
-	XC9160_write_cmos_sensor(0x8005,0x40);
-	XC9160_write_cmos_sensor(0x8006,0x40);
-	XC9160_write_cmos_sensor(0x8007,0x10);  //30
-	XC9160_write_cmos_sensor(0x8008,0xf0);  //60
-	XC9160_write_cmos_sensor(0x8009,0x00);
-	XC9160_write_cmos_sensor(0x800b,0x00);
-	XC9160_write_cmos_sensor(0x8000,0x1d);
-	
-	XC9160_write_cmos_sensor(0xfffe,0x26); 
-	XC9160_write_cmos_sensor(0x8010,0x05);   //crop0
-	XC9160_write_cmos_sensor(0x8012,0x20);   
-	XC9160_write_cmos_sensor(0x8013,0x08);
-	XC9160_write_cmos_sensor(0x8014,0x00);
-	XC9160_write_cmos_sensor(0x8015,0x06);
-	XC9160_write_cmos_sensor(0x8016,0x01);
-	XC9160_write_cmos_sensor(0x8017,0x00);
-	XC9160_write_cmos_sensor(0x8018,0x00);
-	XC9160_write_cmos_sensor(0x8019,0x00);
-	
-	
-	XC9160_write_cmos_sensor(0xfffe,0x30);  //isp0
-	//XC9160_write_cmos_sensor(0x0000,0x01);
-	//XC9160_write_cmos_sensor(0x0001,0x00);
-	//XC9160_write_cmos_sensor(0x0002,0x10);
-	//XC9160_write_cmos_sensor(0x0003,0x20);
-	//XC9160_write_cmos_sensor(0x0004,0x10);
-	
-	//XC9160_write_cmos_sensor(0x0019,0x01);
-	XC9160_write_cmos_sensor(0x0050,0x20);
-	 
-	XC9160_write_cmos_sensor(0x005e,0x1f);      
-	XC9160_write_cmos_sensor(0x005f,0x08);
-	XC9160_write_cmos_sensor(0x0060,0xff);
-	XC9160_write_cmos_sensor(0x0061,0x05);
-	XC9160_write_cmos_sensor(0x0064,0x20);
-	XC9160_write_cmos_sensor(0x0065,0x08);
-	XC9160_write_cmos_sensor(0x0066,0x00);
-	XC9160_write_cmos_sensor(0x0067,0x06);
-	
-	XC9160_write_cmos_sensor(0x0006,0x08);
-	XC9160_write_cmos_sensor(0x0007,0x20);
-	XC9160_write_cmos_sensor(0x0008,0x06);
-	XC9160_write_cmos_sensor(0x0009,0x00);
-	XC9160_write_cmos_sensor(0x000a,0x08);
-	XC9160_write_cmos_sensor(0x000b,0x20);
-	XC9160_write_cmos_sensor(0x000c,0x06);
-	XC9160_write_cmos_sensor(0x000d,0x00); 
-	
-	XC9160_write_cmos_sensor(0xfffe,0x26);
-	XC9160_write_cmos_sensor(0x0000,0x60);
-	XC9160_write_cmos_sensor(0x0009,0xc4);   //mipi_rx_set
-	
-	XC9160_write_cmos_sensor(0xfffe,0x26);
-	XC9160_write_cmos_sensor(0x2019,0x08);   //mipi_tx
-	XC9160_write_cmos_sensor(0x201a,0x20);
-	XC9160_write_cmos_sensor(0x201b,0x06);
-	XC9160_write_cmos_sensor(0x201c,0x00);
-	XC9160_write_cmos_sensor(0x201d,0x00);
-	XC9160_write_cmos_sensor(0x201e,0x00);
-	XC9160_write_cmos_sensor(0x201f,0x00);
-	XC9160_write_cmos_sensor(0x2020,0x00);
-	
-	XC9160_write_cmos_sensor(0x2015,0x83);
-	XC9160_write_cmos_sensor(0x2017,0x1e);
-	XC9160_write_cmos_sensor(0x2018,0x00);
-	XC9160_write_cmos_sensor(0x2023,0x03);   //mipi_tx_set
-	
-	XC9160_write_cmos_sensor(0xfffe,0x2c);  //stitch
-	XC9160_write_cmos_sensor(0x0000,0x00);
-	XC9160_write_cmos_sensor(0x0001,0x08);
-	XC9160_write_cmos_sensor(0x0002,0x20);
-	XC9160_write_cmos_sensor(0x0004,0x06);
-	XC9160_write_cmos_sensor(0x0005,0x00);
-	XC9160_write_cmos_sensor(0x0008,0x10);
-	XC9160_write_cmos_sensor(0x0044,0x08);  //fifo0
-	XC9160_write_cmos_sensor(0x0045,0x04);
-	XC9160_write_cmos_sensor(0x0048,0x10);
-	XC9160_write_cmos_sensor(0x0049,0x30);
-	
-	XC9160_write_cmos_sensor(0xfffe,0x2e);  //retiming
-	//XC9160_write_cmos_sensor(0x0000,0x42);
-	XC9160_write_cmos_sensor(0x0001,0xcc);
-	XC9160_write_cmos_sensor(0x0003,0x00);
-	XC9160_write_cmos_sensor(0x0004,0x01);
-	
-	XC9160_write_cmos_sensor(0xfffe,0x30);    //lenc skip
-	XC9160_write_cmos_sensor(0x0012,0x95);            
-	XC9160_write_cmos_sensor(0x000e,0x00);            
-	XC9160_write_cmos_sensor(0x000f,0x04);            
-	XC9160_write_cmos_sensor(0x0010,0x00);           
-	XC9160_write_cmos_sensor(0x0011,0x00);    
-	
-	//isp top
-	XC9160_write_cmos_sensor(0xfffe,0x30);   //isp   
-	XC9160_write_cmos_sensor(0x0000,0x57);            
-	XC9160_write_cmos_sensor(0x0001,0x82);            
-	XC9160_write_cmos_sensor(0x0002,0x96);            
-	XC9160_write_cmos_sensor(0x0003,0x35);            
-	XC9160_write_cmos_sensor(0x0004,0x10);    
-	XC9160_write_cmos_sensor(0x0019,0x0b);
 	XC9160DB("[xchip]XC9160PreviewSetting end \n");
 } 
 
@@ -309,7 +265,7 @@ void SubSensorCaptureSetting(void)
  void Dual_XC9160InitialSetting(void)
  {
  	XC9160DB("[xchip]Dual_XC9160_ISP_InitialSetting start \n");
- 	XC9160_write_cmos_sensor(0xfffd,0x80);
+XC9160_write_cmos_sensor(0xfffd,0x80);
 	XC9160_write_cmos_sensor(0xfffe,0x50);
 	XC9160_write_cmos_sensor(0x001c,0xff);       
 	XC9160_write_cmos_sensor(0x001d,0xff);  
@@ -420,7 +376,7 @@ void SubSensorCaptureSetting(void)
 	XC9160_write_cmos_sensor(0x201f,0x00);
 	XC9160_write_cmos_sensor(0x2020,0x00);
 	
-	XC9160_write_cmos_sensor(0x2015,0x80);
+	XC9160_write_cmos_sensor(0x2015,0x83);
 	XC9160_write_cmos_sensor(0x2017,0x1e);
 	XC9160_write_cmos_sensor(0x2018,0x00);
 	XC9160_write_cmos_sensor(0x2023,0x03);   //mipi_tx_set
@@ -463,7 +419,7 @@ void SubSensorCaptureSetting(void)
 void Dual_MainSensorInitialSetting(void)
  {
  	XC9160DB("[xchip]Dual_MainSensorMIPIInitialSetting start \n");
-	mainsensor_write_cmos_sensor(0x6028,0x4000);
+mainsensor_write_cmos_sensor(0x6028,0x4000);
 	mainsensor_write_cmos_sensor(0x6214,0xFFFF);
 	mainsensor_write_cmos_sensor(0x6216,0xFFFF);
 	mainsensor_write_cmos_sensor(0x6218,0x0000);
@@ -920,8 +876,7 @@ void Dual_MainSensorInitialSetting(void)
 	//mainsensor_write_cmos_sensor(0x3098,0x0002);
 	//mainsensor_write_cmos_sensor(0x3166,0x000a);
 	//mainsensor_write_cmos_sensor(0x3168,0x0023);
-	mainsensor_write_cmos_sensor(0x0100,0x0100);
-
+	mainsensor_write_cmos_sensor(0x0100,0x0100);	
  	XC9160DB("[xchip]Dual_MainSensorMIPIInitialSetting end \n");
  }
 

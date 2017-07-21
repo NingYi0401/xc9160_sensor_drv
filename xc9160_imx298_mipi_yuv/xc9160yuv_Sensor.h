@@ -151,7 +151,10 @@ extern IMX298MIPI_OP_TYPE IMX298MIPI_g_iIMX298MIPI_Mode;
 #define S5K3L8MIPI_READ_ID							0x5b     //0x6d
 
 #define OV5675MIPI_WRITE_ID						    0x6c  
-#define OV5675MIPI_READ_ID							0x6d     
+#define OV5675MIPI_READ_ID							0x6d
+
+#define OTP_WRITE_ID						0xA0  
+#define OTP_READ_ID							0xA0      
 
 /* XC9160 READ/WRITE ID */
 #define XC9160_WRITE_ID						    0x36
@@ -159,11 +162,11 @@ extern IMX298MIPI_OP_TYPE IMX298MIPI_g_iIMX298MIPI_Mode;
 
 #define XC9160_ISP_ID							0x7160
 
-UINT32 unusedopen(void);
-UINT32 GetResolution(MSDK_SENSOR_RESOLUTION_INFO_STRUCT *pSensorResolution);
-UINT32 GetInfo(MSDK_SCENARIO_ID_ENUM ScenarioId, MSDK_SENSOR_INFO_STRUCT *pSensorInfo, MSDK_SENSOR_CONFIG_STRUCT *pSensorConfigData);
-UINT32 Control(MSDK_SCENARIO_ID_ENUM ScenarioId, MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *pImageWindow, MSDK_SENSOR_CONFIG_STRUCT *pSensorConfigData);
-UINT32 FeatureControl(MSDK_SENSOR_FEATURE_ENUM FeatureId, UINT8 *pFeaturePara,UINT32 *pFeatureParaLen);
-UINT32 Close(void);
-UINT32 XC9160IMX298MIPISensorInit(PSENSOR_FUNCTION_STRUCT pfFunc);
+static UINT32 UnusedOpen(void);
+static UINT32 GetResolution(MSDK_SENSOR_RESOLUTION_INFO_STRUCT *pSensorResolution);
+static UINT32 GetInfo(MSDK_SCENARIO_ID_ENUM ScenarioId, MSDK_SENSOR_INFO_STRUCT *pSensorInfo, MSDK_SENSOR_CONFIG_STRUCT *pSensorConfigData);
+static UINT32 Control(MSDK_SCENARIO_ID_ENUM ScenarioId, MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *pImageWindow, MSDK_SENSOR_CONFIG_STRUCT *pSensorConfigData);
+static UINT32 FeatureControl(MSDK_SENSOR_FEATURE_ENUM FeatureId, UINT8 *pFeaturePara,UINT32 *pFeatureParaLen);
+static UINT32 Close(void);
+//UINT32 XC9160IMX298MIPISensorInit(PSENSOR_FUNCTION_STRUCT pfFunc);
 #endif /* __SENSOR_H */
